@@ -3,192 +3,298 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>E-Commerce Analytics Dashboard</title>
+  <title>Premium E-Commerce Analytics Dashboard</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
   <style>
-    .chart-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 1rem;
-      padding: 1.25rem;
-      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 30%),
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-hover {
+      transition: all 0.25s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10);
+    }
+
     .chart-wrap {
       position: relative;
       height: 360px;
       width: 100%;
     }
-    .upload-card {
-      background: white;
-      border: 2px dashed #cbd5e1;
-      border-radius: 1.25rem;
-      padding: 1.25rem;
-      transition: 0.2s ease;
+
+    .kpi-glow-indigo {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
-    .upload-card:hover {
-      border-color: #4f46e5;
-      transform: translateY(-1px);
+
+    .kpi-glow-emerald {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    }
+
+    .kpi-glow-amber {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+    }
+
+    .kpi-glow-rose {
+      background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    }
+
+    .hero-bg {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.18), transparent 25%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.14), transparent 25%),
+        linear-gradient(135deg, #312e81 0%, #4f46e5 45%, #0ea5e9 100%);
+    }
+
+    .upload-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans">
-  <div class="min-h-screen">
-    <!-- Header -->
-    <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="bg-indigo-600 text-white p-2 rounded-xl">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 3v18h18M7 14l3-3 3 2 4-6"></path>
-            </svg>
+<body class="text-slate-800 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
+
+    <!-- Hero Header -->
+    <section class="hero-bg rounded-3xl p-6 md:p-10 text-white shadow-2xl overflow-hidden relative">
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="max-w-3xl">
+          <div class="upload-pill bg-white/15 text-white mb-4">
+            <span>Interactive Website</span>
           </div>
-          <div>
-            <h1 class="text-xl font-bold">E-Commerce Analytics Dashboard</h1>
-            <p class="text-sm text-slate-500">Interactive HTML dashboard for your uploaded CSV datasets</p>
-          </div>
+          <h1 class="text-3xl md:text-5xl font-black leading-tight">
+            Premium E-Commerce Analytics Dashboard
+          </h1>
+          <p class="mt-4 text-white/85 text-sm md:text-base max-w-2xl">
+            Upload your CSV datasets and instantly explore revenue trends, product category performance,
+            customer geography, payment behavior, and delivery performance in one polished dashboard.
+          </p>
         </div>
-        <button onclick="resetApp()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold">
-          Reset
+
+        <div class="glass rounded-3xl p-5 text-slate-800 min-w-[280px]">
+          <p class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Website Status</p>
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <p id="statusText" class="font-semibold text-sm">Waiting for all 5 files...</p>
+          </div>
+          <button onclick="resetApp()" class="mt-4 w-full rounded-2xl bg-slate-900 text-white py-3 font-bold hover:bg-slate-700 transition">
+            Reset Dashboard
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="uploadSection" class="glass rounded-3xl p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-black">Upload Your Datasets</h2>
+          <p class="text-slate-500 mt-1">Use the 5 CSV files to generate the dashboard.</p>
+        </div>
+        <button id="buildBtn" disabled class="px-6 py-3 rounded-2xl bg-slate-200 text-slate-400 font-bold cursor-not-allowed">
+          Build Dashboard
         </button>
       </div>
-    </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
-      <!-- Upload Section -->
-      <section id="uploadSection" class="space-y-6">
-        <div>
-          <h2 class="text-2xl font-black">Upload the 5 CSV files</h2>
-          <p class="text-slate-500 mt-1">The dashboard will join the datasets using order_id, product_id, and customer_id.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-          <div class="upload-card text-center">
-            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Orders</p>
-            <button onclick="document.getElementById('ordersFile').click()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-semibold hover:bg-indigo-100">Upload</button>
-            <input id="ordersFile" type="file" accept=".csv" class="hidden">
-            <p id="ordersInfo" class="mt-3 text-xs text-slate-500">No file</p>
-          </div>
-
-          <div class="upload-card text-center">
-            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Order Items</p>
-            <button onclick="document.getElementById('itemsFile').click()" class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-100">Upload</button>
-            <input id="itemsFile" type="file" accept=".csv" class="hidden">
-            <p id="itemsInfo" class="mt-3 text-xs text-slate-500">No file</p>
-          </div>
-
-          <div class="upload-card text-center">
-            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Payments</p>
-            <button onclick="document.getElementById('paymentsFile').click()" class="bg-amber-50 text-amber-700 px-4 py-2 rounded-xl font-semibold hover:bg-amber-100">Upload</button>
-            <input id="paymentsFile" type="file" accept=".csv" class="hidden">
-            <p id="paymentsInfo" class="mt-3 text-xs text-slate-500">No file</p>
-          </div>
-
-          <div class="upload-card text-center">
-            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Products</p>
-            <button onclick="document.getElementById('productsFile').click()" class="bg-pink-50 text-pink-700 px-4 py-2 rounded-xl font-semibold hover:bg-pink-100">Upload</button>
-            <input id="productsFile" type="file" accept=".csv" class="hidden">
-            <p id="productsInfo" class="mt-3 text-xs text-slate-500">No file</p>
-          </div>
-
-          <div class="upload-card text-center">
-            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Customers</p>
-            <button onclick="document.getElementById('customersFile').click()" class="bg-cyan-50 text-cyan-700 px-4 py-2 rounded-xl font-semibold hover:bg-cyan-100">Upload</button>
-            <input id="customersFile" type="file" accept=".csv" class="hidden">
-            <p id="customersInfo" class="mt-3 text-xs text-slate-500">No file</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <button id="buildBtn" disabled class="px-6 py-3 rounded-2xl bg-slate-200 text-slate-400 font-bold cursor-not-allowed">
-            Build Dashboard
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-indigo-600 font-black text-sm mb-2">Orders</div>
+          <p class="text-xs text-slate-400 mb-4">Main order-level table</p>
+          <button onclick="document.getElementById('ordersFile').click()" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 font-bold hover:bg-indigo-700 transition">
+            Upload
           </button>
-          <span id="statusText" class="text-sm text-slate-500">Waiting for all 5 files...</span>
-        </div>
-      </section>
-
-      <!-- Controls -->
-      <section id="controlSection" class="hidden chart-card">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">State Filter</label>
-            <select id="stateFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
-              <option value="ALL">All States</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Order Status</label>
-            <select id="statusFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
-              <option value="ALL">All Statuses</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Chart Metric</label>
-            <select id="metricFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
-              <option value="revenue">Revenue</option>
-              <option value="orders">Orders</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <!-- KPI Cards -->
-      <section id="kpiSection" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="chart-card">
-          <p class="text-xs uppercase font-bold text-slate-400">Total Orders</p>
-          <h3 id="kpiOrders" class="text-3xl font-black mt-2">0</h3>
-        </div>
-        <div class="chart-card">
-          <p class="text-xs uppercase font-bold text-slate-400">Total Revenue</p>
-          <h3 id="kpiRevenue" class="text-3xl font-black mt-2">$0</h3>
-        </div>
-        <div class="chart-card">
-          <p class="text-xs uppercase font-bold text-slate-400">Avg Order Value</p>
-          <h3 id="kpiAOV" class="text-3xl font-black mt-2">$0</h3>
-        </div>
-        <div class="chart-card bg-indigo-600 border-indigo-600">
-          <p class="text-xs uppercase font-bold text-indigo-200">Late Delivery Rate</p>
-          <h3 id="kpiLateRate" class="text-3xl font-black mt-2 text-white">0%</h3>
-        </div>
-      </section>
-
-      <!-- Charts -->
-      <section id="dashboardSection" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="chart-card">
-          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Monthly Trend</h3>
-          <div class="chart-wrap">
-            <canvas id="trendChart"></canvas>
-          </div>
+          <input id="ordersFile" type="file" accept=".csv" class="hidden">
+          <p id="ordersInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
         </div>
 
-        <div class="chart-card">
-          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Top Product Categories</h3>
-          <div class="chart-wrap">
-            <canvas id="categoryChart"></canvas>
-          </div>
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-emerald-600 font-black text-sm mb-2">Order Items</div>
+          <p class="text-xs text-slate-400 mb-4">Line-item transaction table</p>
+          <button onclick="document.getElementById('itemsFile').click()" class="rounded-2xl bg-emerald-600 text-white px-4 py-2 font-bold hover:bg-emerald-700 transition">
+            Upload
+          </button>
+          <input id="itemsFile" type="file" accept=".csv" class="hidden">
+          <p id="itemsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
         </div>
 
-        <div class="chart-card">
-          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Payment Type Distribution</h3>
-          <div class="chart-wrap">
-            <canvas id="paymentChart"></canvas>
-          </div>
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-amber-600 font-black text-sm mb-2">Payments</div>
+          <p class="text-xs text-slate-400 mb-4">Payment method details</p>
+          <button onclick="document.getElementById('paymentsFile').click()" class="rounded-2xl bg-amber-500 text-white px-4 py-2 font-bold hover:bg-amber-600 transition">
+            Upload
+          </button>
+          <input id="paymentsFile" type="file" accept=".csv" class="hidden">
+          <p id="paymentsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
         </div>
 
-        <div class="chart-card">
-          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Top States by Revenue</h3>
-          <div class="chart-wrap">
-            <canvas id="stateChart"></canvas>
-          </div>
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-pink-600 font-black text-sm mb-2">Products</div>
+          <p class="text-xs text-slate-400 mb-4">Product category mapping</p>
+          <button onclick="document.getElementById('productsFile').click()" class="rounded-2xl bg-pink-500 text-white px-4 py-2 font-bold hover:bg-pink-600 transition">
+            Upload
+          </button>
+          <input id="productsFile" type="file" accept=".csv" class="hidden">
+          <p id="productsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
         </div>
-      </section>
-    </main>
+
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-cyan-600 font-black text-sm mb-2">Customers</div>
+          <p class="text-xs text-slate-400 mb-4">Customer city and state</p>
+          <button onclick="document.getElementById('customersFile').click()" class="rounded-2xl bg-cyan-500 text-white px-4 py-2 font-bold hover:bg-cyan-600 transition">
+            Upload
+          </button>
+          <input id="customersFile" type="file" accept=".csv" class="hidden">
+          <p id="customersInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section id="controlSection" class="hidden glass rounded-3xl p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-black">Dashboard Controls</h2>
+          <p class="text-slate-500 text-sm">Filter the dashboard to explore different slices of the business.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">State Filter</label>
+          <select id="stateFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="ALL">All States</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Order Status</label>
+          <select id="statusFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="ALL">All Statuses</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Metric</label>
+          <select id="metricFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="revenue">Revenue</option>
+            <option value="orders">Orders</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Section -->
+    <section id="kpiSection" class="hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-indigo">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Total Orders</p>
+        <h3 id="kpiOrders" class="text-4xl font-black mt-3">0</h3>
+      </div>
+
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-emerald">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Total Revenue</p>
+        <h3 id="kpiRevenue" class="text-4xl font-black mt-3">$0</h3>
+      </div>
+
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-amber">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Average Order Value</p>
+        <h3 id="kpiAOV" class="text-4xl font-black mt-3">$0</h3>
+      </div>
+
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-rose">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Late Delivery Rate</p>
+        <h3 id="kpiLateRate" class="text-4xl font-black mt-3">0%</h3>
+      </div>
+    </section>
+
+    <!-- Insights Banner -->
+    <section id="insightSection" class="hidden glass rounded-3xl p-6">
+      <div class="flex items-start gap-4">
+        <div class="bg-indigo-100 text-indigo-700 rounded-2xl p-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-black">Quick Insight</h3>
+          <p id="insightText" class="text-slate-600 mt-1">
+            Upload your data to generate an automatic business summary.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section id="dashboardSection" class="hidden grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Monthly Trend</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Trend</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Top Product Categories</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Categories</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Payment Type Distribution</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Payments</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="paymentChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Top States by Performance</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Geography</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="stateChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-sm text-slate-500 py-4">
+      Built as an interactive analytics website using HTML, Tailwind CSS, Chart.js, and PapaParse.
+    </footer>
   </div>
 
   <script>
@@ -247,7 +353,7 @@
 
       if (allReady) {
         btn.disabled = false;
-        btn.className = "px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700";
+        btn.className = "px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-700 transition";
         btn.onclick = buildDashboard;
         statusText.textContent = "All files uploaded. Ready to build dashboard.";
       } else {
@@ -276,8 +382,7 @@
       const productMap = {};
       products.forEach(p => {
         productMap[p.product_id] = {
-          category: p.product_category_name || 'Unknown',
-          weight: parseFloat(p.product_weight_g) || 0
+          category: p.product_category_name || 'Unknown'
         };
       });
 
@@ -312,7 +417,6 @@
         }
         const val = parseFloat(p.payment_value) || 0;
         paymentsByOrder[orderId].totalPayment += val;
-
         const pt = p.payment_type || 'unknown';
         paymentsByOrder[orderId].paymentTypes[pt] = (paymentsByOrder[orderId].paymentTypes[pt] || 0) + val;
       });
@@ -347,10 +451,12 @@
       }).filter(r => r.purchaseDate);
 
       initFilters();
+
       document.getElementById('uploadSection').classList.add('hidden');
       document.getElementById('controlSection').classList.remove('hidden');
       document.getElementById('kpiSection').classList.remove('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('insightSection').classList.remove('hidden');
 
       updateDashboard();
     }
@@ -393,7 +499,6 @@
       const rows = getFilteredRows();
       const metric = document.getElementById('metricFilter').value;
 
-      // KPIs
       const totalOrders = rows.length;
       const totalRevenue = rows.reduce((sum, r) => sum + r.revenue, 0);
       const avgOrderValue = totalOrders ? totalRevenue / totalOrders : 0;
@@ -404,10 +509,31 @@
       document.getElementById('kpiAOV').textContent = '$' + avgOrderValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
       document.getElementById('kpiLateRate').textContent = lateRate.toFixed(1) + '%';
 
+      updateInsightText(rows);
       renderMonthlyTrend(rows, metric);
       renderCategoryChart(rows, metric);
       renderPaymentChart(rows);
       renderStateChart(rows, metric);
+    }
+
+    function updateInsightText(rows) {
+      if (!rows.length) {
+        document.getElementById('insightText').textContent = "No records match the selected filters.";
+        return;
+      }
+
+      const stateRevenue = {};
+      rows.forEach(r => {
+        stateRevenue[r.state] = (stateRevenue[r.state] || 0) + r.revenue;
+      });
+
+      const topState = Object.entries(stateRevenue).sort((a,b) => b[1] - a[1])[0];
+
+      const lateCount = rows.filter(r => r.isLate).length;
+      const lateRate = rows.length ? (lateCount / rows.length) * 100 : 0;
+
+      document.getElementById('insightText').textContent =
+        `This filtered view contains ${rows.length.toLocaleString()} orders. The leading state is ${topState ? topState[0] : 'N/A'}, and the late delivery rate is ${lateRate.toFixed(1)}%.`;
     }
 
     function renderMonthlyTrend(rows, metric) {
@@ -416,7 +542,6 @@
       rows.forEach(r => {
         const d = r.purchaseDate;
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
         if (!grouped[key]) grouped[key] = 0;
         grouped[key] += metric === 'orders' ? 1 : r.revenue;
       });
@@ -433,10 +558,12 @@
             label: metric === 'orders' ? 'Orders' : 'Revenue',
             data,
             borderColor: '#4f46e5',
-            backgroundColor: 'rgba(79,70,229,0.08)',
+            backgroundColor: 'rgba(79, 70, 229, 0.15)',
             fill: true,
             tension: 0.35,
-            borderWidth: 3
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: '#4f46e5'
           }]
         },
         options: {
@@ -467,9 +594,7 @@
         });
       });
 
-      const top = Object.entries(grouped)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
+      const top = Object.entries(grouped).sort((a,b) => b[1] - a[1]).slice(0, 10);
 
       if (charts.category) charts.category.destroy();
       charts.category = new Chart(document.getElementById('categoryChart'), {
@@ -478,8 +603,11 @@
           labels: top.map(x => x[0]),
           datasets: [{
             data: top.map(x => x[1]),
-            backgroundColor: '#10b981',
-            borderRadius: 8
+            backgroundColor: [
+              '#4f46e5','#7c3aed','#2563eb','#0891b2','#059669',
+              '#65a30d','#d97706','#ea580c','#dc2626','#db2777'
+            ],
+            borderRadius: 10
           }]
         },
         options: {
@@ -510,12 +638,19 @@
           labels,
           datasets: [{
             data,
-            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6']
+            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
         }
       });
     }
@@ -528,9 +663,7 @@
         grouped[r.state] += metric === 'orders' ? 1 : r.revenue;
       });
 
-      const top = Object.entries(grouped)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
+      const top = Object.entries(grouped).sort((a,b) => b[1] - a[1]).slice(0, 10);
 
       if (charts.state) charts.state.destroy();
       charts.state = new Chart(document.getElementById('stateChart'), {
@@ -539,8 +672,8 @@
           labels: top.map(x => x[0]),
           datasets: [{
             data: top.map(x => x[1]),
-            backgroundColor: '#f59e0b',
-            borderRadius: 8
+            backgroundColor: '#0ea5e9',
+            borderRadius: 10
           }]
         },
         options: {
