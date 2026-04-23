@@ -3,704 +3,302 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NOIR GRID Analytics</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <title>Premium E-Commerce Analytics Dashboard</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
   <style>
-    :root {
-      --bg: #0a0a0f;
-      --panel: #0f1016;
-      --panel-2: #11121a;
-      --text: #f3f5f7;
-      --muted: #9aa0ad;
-      --line: rgba(255,255,255,0.10);
-      --lime: #c8ff57;
-      --purple: #7b61ff;
-      --red: #ff6b6b;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: "DM Mono", monospace;
-      min-height: 100%;
-    }
-
     body {
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 28px 28px;
-      background-position: 0 0;
+      background:
+        radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 30%),
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
 
-    h1, h2, h3, h4, .brand, .section-title, .kpi-title {
-      font-family: "Syne", sans-serif;
-      letter-spacing: 0.02em;
+    .glass {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
     }
 
-    .mono { font-family: "DM Mono", monospace; }
-    .wrap { max-width: 1600px; margin: 0 auto; padding: 0 18px 32px; }
-
-    .bordered { border: 1px solid var(--line); }
-    .section {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    .card-hover {
+      transition: all 0.25s ease;
     }
 
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      backdrop-filter: blur(10px);
-      background: rgba(10,10,15,0.92);
-      border-bottom: 1px solid var(--line);
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.10);
     }
 
-    .brand {
-      font-size: clamp(1.25rem, 2vw, 2rem);
-      font-weight: 800;
-      color: var(--text);
-      text-transform: uppercase;
-    }
-
-    .brand span { color: var(--lime); }
-
-    .muted { color: var(--muted); }
-    .lime { color: var(--lime); }
-    .purple { color: var(--purple); }
-    .red { color: var(--red); }
-
-    .btn, .select, .file-btn {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--line);
-      padding: 12px 14px;
-      font-family: "DM Mono", monospace;
-      font-size: 13px;
-      width: 100%;
-      appearance: none;
-    }
-
-    .btn:hover, .file-btn:hover, .select:hover {
-      border-color: rgba(200,255,87,0.45);
-      color: var(--lime);
-      cursor: pointer;
-    }
-
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      color: var(--muted);
-    }
-
-    .toolbar-grid {
-      display: grid;
-      grid-template-columns: 1.2fr repeat(3, minmax(140px, 180px));
-      gap: 12px;
-      align-items: center;
-      padding: 14px 0;
-    }
-
-    .upload-shell {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-
-    .upload-panel {
-      width: min(1400px, 100%);
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.01);
-      padding: 22px;
-    }
-
-    .upload-head {
-      display: grid;
-      grid-template-columns: 1.3fr 0.7fr;
-      gap: 18px;
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 18px;
-      margin-bottom: 18px;
-    }
-
-    .upload-title {
-      font-size: clamp(2rem, 5vw, 4.8rem);
-      line-height: 0.92;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin: 0;
-    }
-
-    .upload-sub {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-      max-width: 70ch;
-    }
-
-    .upload-statusbox {
-      border-left: 1px solid var(--line);
-      padding-left: 18px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .upload-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 0;
-      border-top: 1px solid var(--line);
-      border-left: 1px solid var(--line);
-    }
-
-    .file-card {
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      min-height: 220px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 18px;
-      background: rgba(255,255,255,0.01);
-    }
-
-    .file-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .status-dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #1d1f2a;
-      flex: 0 0 auto;
-      margin-top: 3px;
-    }
-
-    .status-dot.loaded {
-      background: var(--lime);
-      box-shadow: 0 0 0 3px rgba(200,255,87,0.13);
-      border-color: transparent;
-    }
-
-    .file-name {
-      font-size: 12px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .file-label {
-      font-family: "Syne", sans-serif;
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-    }
-
-    .file-meta {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.7;
-      word-break: break-word;
-    }
-
-    .dashboard {
-      display: none;
-      padding-top: 12px;
-    }
-
-    .dashboard.active { display: block; }
-    .hidden-screen { display: none; }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 0;
-      border-top: 1px solid var(--line);
-      border-left: 1px solid var(--line);
-      margin-top: 14px;
-    }
-
-    .kpi {
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      padding: 18px 18px 20px;
-      min-height: 144px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background: rgba(255,255,255,0.01);
-    }
-
-    .kpi-title {
-      font-size: 12px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .kpi-value {
-      font-family: "Syne", sans-serif;
-      font-size: clamp(1.8rem, 4vw, 3.6rem);
-      line-height: 1.02;
-      font-weight: 800;
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1.45fr 0.85fr;
-      gap: 18px;
-      margin-top: 18px;
-    }
-
-    .stack {
-      display: grid;
-      gap: 18px;
-    }
-
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .section-title {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .section-body { padding: 14px 16px 16px; }
-
-    .chart-box {
+    .chart-wrap {
+      position: relative;
       height: 360px;
-      position: relative;
-    }
-
-    .small-chart-box { height: 290px; position: relative; }
-
-    .twocol {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-    }
-
-    .threecol {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 18px;
-    }
-
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .pill {
-      border: 1px solid var(--line);
-      padding: 8px 10px;
-      font-size: 12px;
-      color: var(--text);
-      background: rgba(255,255,255,0.02);
-    }
-
-    .rank-table {
-      display: grid;
-      gap: 10px;
-    }
-
-    .rank-row {
-      display: grid;
-      grid-template-columns: 32px minmax(0,1fr) 120px;
-      gap: 12px;
-      align-items: center;
-      font-size: 12px;
-      padding: 7px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .rank-name {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      color: var(--text);
-    }
-
-    .bar-track {
-      margin-top: 6px;
       width: 100%;
-      height: 8px;
-      background: rgba(255,255,255,0.06);
-      position: relative;
     }
 
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--lime), var(--purple));
+    .kpi-glow-indigo {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
 
-    .heatmap-wrap {
-      overflow-x: auto;
+    .kpi-glow-emerald {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     }
 
-    .heatmap {
-      display: grid;
-      grid-template-columns: 72px repeat(24, minmax(22px, 1fr));
-      gap: 1px;
-      min-width: 760px;
-      border: 1px solid var(--line);
-      background: var(--line);
+    .kpi-glow-amber {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
     }
 
-    .hm-cell, .hm-head, .hm-side {
-      min-height: 28px;
-      display: grid;
-      place-items: center;
-      background: #0d0f16;
-      font-size: 10px;
-      color: var(--muted);
+    .kpi-glow-rose {
+      background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
     }
 
-    .hm-side {
-      justify-content: start;
-      padding-left: 8px;
-      font-size: 11px;
+    .hero-bg {
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.18), transparent 25%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.14), transparent 25%),
+        linear-gradient(135deg, #312e81 0%, #4f46e5 45%, #0ea5e9 100%);
     }
 
-    .hm-intense {
-      color: #081106;
-      font-weight: 700;
-    }
-
-    .legend {
-      display: flex;
+    .upload-pill {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 12px;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .legend-bar {
-      width: 180px;
-      height: 10px;
-      border: 1px solid var(--line);
-      background: linear-gradient(90deg, rgba(200,255,87,0.08), rgba(200,255,87,1));
-    }
-
-    canvas { width: 100% !important; height: 100% !important; }
-
-    @media (max-width: 1280px) {
-      .upload-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .main-grid { grid-template-columns: 1fr; }
-      .twocol, .threecol { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 920px) {
-      .toolbar-grid { grid-template-columns: 1fr; }
-      .upload-head { grid-template-columns: 1fr; }
-      .upload-statusbox { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 16px; }
-      .upload-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .kpi-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 640px) {
-      .upload-grid { grid-template-columns: 1fr; }
-      .wrap { padding: 0 10px 24px; }
-      .section-head, .section-body { padding-left: 12px; padding-right: 12px; }
-      .kpi { min-height: 130px; }
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
   </style>
 </head>
-<body>
-  <div id="uploadScreen" class="upload-shell">
-    <div class="upload-panel">
-      <div class="upload-head">
-        <div>
-          <div class="muted" style="text-transform: uppercase; font-size: 12px; margin-bottom: 12px;">Single-file analytics interface</div>
-          <h1 class="upload-title">Noir<span class="lime">Grid</span> Dashboard</h1>
-          <p class="upload-sub">
-            Upload the five CSV files, join them in memory, and launch a dark editorial analytics dashboard with KPI tiles,
-            time-series views, payment breakdowns, category rankings, geographic analysis, and an order timing heatmap.
+<body class="text-slate-800 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
+
+    <!-- Hero Header -->
+    <section class="hero-bg rounded-3xl p-6 md:p-10 text-white shadow-2xl overflow-hidden relative">
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="max-w-3xl">
+          <div class="upload-pill bg-white/15 text-white mb-4">
+            <span>Interactive Website</span>
+          </div>
+          <h1 class="text-3xl md:text-5xl font-black leading-tight">
+            Premium E-Commerce Analytics Dashboard
+          </h1>
+          <p class="mt-4 text-white/85 text-sm md:text-base max-w-2xl">
+            Upload your CSV datasets and instantly explore revenue trends, product category performance,
+            customer geography, payment behavior, and delivery performance in one polished dashboard.
           </p>
         </div>
-        <div class="upload-statusbox">
-          <div>
-            <div class="muted" style="text-transform: uppercase; font-size: 12px; margin-bottom: 8px;">Launch status</div>
-            <div id="launchStatus" style="font-size: 1.2rem; line-height: 1.5; font-family: 'Syne', sans-serif; font-weight: 700;">
-              Waiting for all files
-            </div>
+
+        <div class="glass rounded-3xl p-5 text-slate-800 min-w-[280px]">
+          <p class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Website Status</p>
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <p id="statusText" class="font-semibold text-sm">Waiting for all 5 files...</p>
           </div>
-          <button id="launchBtn" class="btn" disabled>Launch Dashboard</button>
+          <button onclick="resetApp()" class="mt-4 w-full rounded-2xl bg-slate-900 text-white py-3 font-bold hover:bg-slate-700 transition">
+            Reset Dashboard
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="uploadSection" class="glass rounded-3xl p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-black">Upload Your Datasets</h2>
+          <p class="text-slate-500 mt-1">Use the 5 CSV files to generate the dashboard.</p>
+        </div>
+        <button id="buildBtn" disabled class="px-6 py-3 rounded-2xl bg-slate-200 text-slate-400 font-bold cursor-not-allowed">
+          Build Dashboard
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-indigo-600 font-black text-sm mb-2">Orders</div>
+          <p class="text-xs text-slate-400 mb-4">Main order-level table</p>
+          <button onclick="document.getElementById('ordersFile').click()" class="rounded-2xl bg-indigo-600 text-white px-4 py-2 font-bold hover:bg-indigo-700 transition">
+            Upload
+          </button>
+          <input id="ordersFile" type="file" accept=".csv" class="hidden">
+          <p id="ordersInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-emerald-600 font-black text-sm mb-2">Order Items</div>
+          <p class="text-xs text-slate-400 mb-4">Line-item transaction table</p>
+          <button onclick="document.getElementById('itemsFile').click()" class="rounded-2xl bg-emerald-600 text-white px-4 py-2 font-bold hover:bg-emerald-700 transition">
+            Upload
+          </button>
+          <input id="itemsFile" type="file" accept=".csv" class="hidden">
+          <p id="itemsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-amber-600 font-black text-sm mb-2">Payments</div>
+          <p class="text-xs text-slate-400 mb-4">Payment method details</p>
+          <button onclick="document.getElementById('paymentsFile').click()" class="rounded-2xl bg-amber-500 text-white px-4 py-2 font-bold hover:bg-amber-600 transition">
+            Upload
+          </button>
+          <input id="paymentsFile" type="file" accept=".csv" class="hidden">
+          <p id="paymentsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-pink-600 font-black text-sm mb-2">Products</div>
+          <p class="text-xs text-slate-400 mb-4">Product category mapping</p>
+          <button onclick="document.getElementById('productsFile').click()" class="rounded-2xl bg-pink-500 text-white px-4 py-2 font-bold hover:bg-pink-600 transition">
+            Upload
+          </button>
+          <input id="productsFile" type="file" accept=".csv" class="hidden">
+          <p id="productsInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+
+        <div class="glass card-hover rounded-3xl p-5 text-center">
+          <div class="text-cyan-600 font-black text-sm mb-2">Customers</div>
+          <p class="text-xs text-slate-400 mb-4">Customer city and state</p>
+          <button onclick="document.getElementById('customersFile').click()" class="rounded-2xl bg-cyan-500 text-white px-4 py-2 font-bold hover:bg-cyan-600 transition">
+            Upload
+          </button>
+          <input id="customersFile" type="file" accept=".csv" class="hidden">
+          <p id="customersInfo" class="mt-4 text-xs text-slate-500 break-all">No file</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section id="controlSection" class="hidden glass rounded-3xl p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-black">Dashboard Controls</h2>
+          <p class="text-slate-500 text-sm">Filter the dashboard to explore different slices of the business.</p>
         </div>
       </div>
 
-      <div class="upload-grid">
-        <div class="file-card">
-          <div>
-            <div class="file-top">
-              <div>
-                <div class="file-name">File 01</div>
-                <div class="file-label">Orders</div>
-              </div>
-              <div id="dot-orders" class="status-dot"></div>
-            </div>
-            <div class="file-meta" id="meta-orders">Required for order ids, timestamps, status, and customer ids.</div>
-          </div>
-          <div>
-            <button class="file-btn" onclick="document.getElementById('file-orders').click()">Upload orders CSV</button>
-            <input id="file-orders" type="file" accept=".csv" hidden />
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">State Filter</label>
+          <select id="stateFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="ALL">All States</option>
+          </select>
         </div>
 
-        <div class="file-card">
-          <div>
-            <div class="file-top">
-              <div>
-                <div class="file-name">File 02</div>
-                <div class="file-label">Order Items</div>
-              </div>
-              <div id="dot-items" class="status-dot"></div>
-            </div>
-            <div class="file-meta" id="meta-items">Required for item-level revenue and product joins.</div>
-          </div>
-          <div>
-            <button class="file-btn" onclick="document.getElementById('file-items').click()">Upload order items CSV</button>
-            <input id="file-items" type="file" accept=".csv" hidden />
-          </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Order Status</label>
+          <select id="statusFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="ALL">All Statuses</option>
+          </select>
         </div>
 
-        <div class="file-card">
-          <div>
-            <div class="file-top">
-              <div>
-                <div class="file-name">File 03</div>
-                <div class="file-label">Payments</div>
-              </div>
-              <div id="dot-payments" class="status-dot"></div>
-            </div>
-            <div class="file-meta" id="meta-payments">Required for payment value and method breakdowns.</div>
-          </div>
-          <div>
-            <button class="file-btn" onclick="document.getElementById('file-payments').click()">Upload payments CSV</button>
-            <input id="file-payments" type="file" accept=".csv" hidden />
-          </div>
-        </div>
-
-        <div class="file-card">
-          <div>
-            <div class="file-top">
-              <div>
-                <div class="file-name">File 04</div>
-                <div class="file-label">Products</div>
-              </div>
-              <div id="dot-products" class="status-dot"></div>
-            </div>
-            <div class="file-meta" id="meta-products">Required for category mapping and product metadata.</div>
-          </div>
-          <div>
-            <button class="file-btn" onclick="document.getElementById('file-products').click()">Upload products CSV</button>
-            <input id="file-products" type="file" accept=".csv" hidden />
-          </div>
-        </div>
-
-        <div class="file-card">
-          <div>
-            <div class="file-top">
-              <div>
-                <div class="file-name">File 05</div>
-                <div class="file-label">Customers</div>
-              </div>
-              <div id="dot-customers" class="status-dot"></div>
-            </div>
-            <div class="file-meta" id="meta-customers">Required for customer geography and uniqueness counts.</div>
-          </div>
-          <div>
-            <button class="file-btn" onclick="document.getElementById('file-customers').click()">Upload customers CSV</button>
-            <input id="file-customers" type="file" accept=".csv" hidden />
-          </div>
+        <div>
+          <label class="block text-xs uppercase tracking-widest font-bold text-slate-400 mb-2">Metric</label>
+          <select id="metricFilter" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <option value="revenue">Revenue</option>
+            <option value="orders">Orders</option>
+          </select>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div id="dashboard" class="dashboard">
-    <div class="topbar">
-      <div class="wrap">
-        <div class="toolbar-grid">
-          <div>
-            <div class="brand">Noir<span>Grid</span></div>
-            <div class="muted" style="font-size:12px; margin-top: 4px;">Dark analytics dashboard · joined in browser memory</div>
-          </div>
+    <!-- KPI Section -->
+    <section id="kpiSection" class="hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-indigo">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Total Orders</p>
+        <h3 id="kpiOrders" class="text-4xl font-black mt-3">0</h3>
+      </div>
 
-          <div>
-            <select id="metricSelect" class="select">
-              <option value="revenue">Metric · Revenue</option>
-              <option value="orders">Metric · Orders</option>
-              <option value="late">Metric · Late Deliveries</option>
-            </select>
-          </div>
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-emerald">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Total Revenue</p>
+        <h3 id="kpiRevenue" class="text-4xl font-black mt-3">$0</h3>
+      </div>
 
-          <div>
-            <select id="granularitySelect" class="select">
-              <option value="monthly">Granularity · Monthly</option>
-              <option value="weekly">Granularity · Weekly</option>
-            </select>
-          </div>
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-amber">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Average Order Value</p>
+        <h3 id="kpiAOV" class="text-4xl font-black mt-3">$0</h3>
+      </div>
 
-          <div>
-            <button class="btn" onclick="resetDashboard()">Reset</button>
-          </div>
+      <div class="rounded-3xl p-6 text-white shadow-xl card-hover kpi-glow-rose">
+        <p class="text-xs uppercase tracking-widest text-white/70 font-bold">Late Delivery Rate</p>
+        <h3 id="kpiLateRate" class="text-4xl font-black mt-3">0%</h3>
+      </div>
+    </section>
+
+    <!-- Insights Banner -->
+    <section id="insightSection" class="hidden glass rounded-3xl p-6">
+      <div class="flex items-start gap-4">
+        <div class="bg-indigo-100 text-indigo-700 rounded-2xl p-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-black">Quick Insight</h3>
+          <p id="insightText" class="text-slate-600 mt-1">
+            Upload your data to generate an automatic business summary.
+          </p>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="wrap">
-      <div class="kpi-grid">
-        <div class="kpi">
-          <div class="kpi-title">Total Revenue</div>
-          <div class="kpi-value lime" id="kpiRevenue">$0</div>
+    <!-- Charts -->
+    <section id="dashboardSection" class="hidden grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Monthly Trend</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Trend</span>
         </div>
-        <div class="kpi">
-          <div class="kpi-title">Total Orders</div>
-          <div class="kpi-value purple" id="kpiOrders">0</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Unique Customers</div>
-          <div class="kpi-value lime" id="kpiCustomers">0</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Avg Order Value</div>
-          <div class="kpi-value purple" id="kpiAOV">$0</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Late Deliveries</div>
-          <div class="kpi-value red" id="kpiLate">0</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">On-Time Rate</div>
-          <div class="kpi-value lime" id="kpiOnTime">0%</div>
+        <div class="chart-wrap">
+          <canvas id="trendChart"></canvas>
         </div>
       </div>
 
-      <div class="main-grid">
-        <div class="stack">
-          <section class="section">
-            <div class="section-head">
-              <h3 class="section-title">Trend Analysis</h3>
-              <div class="muted" id="trendMeta">Revenue · Monthly</div>
-            </div>
-            <div class="section-body">
-              <div class="chart-box"><canvas id="trendChart"></canvas></div>
-            </div>
-          </section>
-
-          <div class="twocol">
-            <section class="section">
-              <div class="section-head">
-                <h3 class="section-title">Payment Method Breakdown</h3>
-                <div class="muted">Doughnut</div>
-              </div>
-              <div class="section-body">
-                <div class="small-chart-box"><canvas id="paymentChart"></canvas></div>
-              </div>
-            </section>
-
-            <section class="section">
-              <div class="section-head">
-                <h3 class="section-title">Order Status</h3>
-                <div class="muted">Pie + summary</div>
-              </div>
-              <div class="section-body">
-                <div class="small-chart-box"><canvas id="statusChart"></canvas></div>
-                <div class="pills" id="statusPills"></div>
-              </div>
-            </section>
-          </div>
-
-          <section class="section">
-            <div class="section-head">
-              <h3 class="section-title">Order Timing Heatmap</h3>
-              <div class="muted">Day × hour intensity</div>
-            </div>
-            <div class="section-body">
-              <div class="heatmap-wrap">
-                <div id="heatmap" class="heatmap"></div>
-              </div>
-              <div class="legend">
-                <span>Low</span>
-                <div class="legend-bar"></div>
-                <span>High</span>
-              </div>
-            </div>
-          </section>
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Top Product Categories</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Categories</span>
         </div>
-
-        <div class="stack">
-          <section class="section">
-            <div class="section-head">
-              <h3 class="section-title">Top Categories</h3>
-              <div class="muted">Ranked by revenue</div>
-            </div>
-            <div class="section-body">
-              <div id="categoryTable" class="rank-table"></div>
-            </div>
-          </section>
-
-          <section class="section">
-            <div class="section-head">
-              <h3 class="section-title">Revenue by Region</h3>
-              <div class="muted">Horizontal bar</div>
-            </div>
-            <div class="section-body">
-              <div class="small-chart-box"><canvas id="geoChart"></canvas></div>
-            </div>
-          </section>
-
-          <section class="section">
-            <div class="section-head">
-              <h3 class="section-title">Category Revenue</h3>
-              <div class="muted">Bar chart</div>
-            </div>
-            <div class="section-body">
-              <div class="small-chart-box"><canvas id="categoryRevenueChart"></canvas></div>
-            </div>
-          </section>
+        <div class="chart-wrap">
+          <canvas id="categoryChart"></canvas>
         </div>
       </div>
-    </div>
+
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Payment Type Distribution</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Payments</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="paymentChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass rounded-3xl p-6 card-hover">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg">Top States by Performance</h3>
+          <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Geography</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="stateChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-sm text-slate-500 py-4">
+      Built as an interactive analytics website using HTML, Tailwind CSS, Chart.js, and PapaParse.
+    </footer>
   </div>
 
   <script>
-    const files = {
+    const uploadedData = {
       orders: null,
       items: null,
       payments: null,
@@ -711,509 +309,382 @@
     let masterRows = [];
     let charts = {
       trend: null,
+      category: null,
       payment: null,
-      status: null,
-      geo: null,
-      categoryRevenue: null
+      state: null
     };
 
-    const color = {
-      bg: "#0a0a0f",
-      text: "#f3f5f7",
-      muted: "#9aa0ad",
-      line: "rgba(255,255,255,0.10)",
-      lime: "#c8ff57",
-      limeSoft: "rgba(200,255,87,0.18)",
-      purple: "#7b61ff",
-      purpleSoft: "rgba(123,97,255,0.20)",
-      red: "#ff6b6b",
-      redSoft: "rgba(255,107,107,0.22)"
-    };
-
-    Chart.defaults.color = color.muted;
-    Chart.defaults.borderColor = "rgba(255,255,255,0.08)";
-    Chart.defaults.font.family = '"DM Mono", monospace';
-
-    function parseCSVFile(file, onDone) {
+    function parseCSV(file, callback) {
       Papa.parse(file, {
         header: true,
+        dynamicTyping: true,
         skipEmptyLines: true,
-        dynamicTyping: false,
-        complete: (results) => {
-          onDone(results.data || []);
+        complete: function(results) {
+          callback(results.data);
         }
       });
     }
 
-    function wireFileInput(inputId, key, dotId, metaId) {
-      document.getElementById(inputId).addEventListener("change", (e) => {
+    function setupFileUpload(inputId, key, infoId) {
+      document.getElementById(inputId).addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        const meta = document.getElementById(metaId);
-        meta.textContent = "Loading...";
-        parseCSVFile(file, (rows) => {
-          files[key] = rows;
-          document.getElementById(dotId).classList.add("loaded");
-          meta.textContent = `${file.name} · ${rows.length.toLocaleString()} rows loaded`;
+
+        document.getElementById(infoId).textContent = 'Loading...';
+
+        parseCSV(file, function(data) {
+          uploadedData[key] = data;
+          document.getElementById(infoId).textContent = `${file.name} · ${data.length.toLocaleString()} rows`;
           checkReady();
         });
       });
     }
 
-    wireFileInput("file-orders", "orders", "dot-orders", "meta-orders");
-    wireFileInput("file-items", "items", "dot-items", "meta-items");
-    wireFileInput("file-payments", "payments", "dot-payments", "meta-payments");
-    wireFileInput("file-products", "products", "dot-products", "meta-products");
-    wireFileInput("file-customers", "customers", "dot-customers", "meta-customers");
+    setupFileUpload('ordersFile', 'orders', 'ordersInfo');
+    setupFileUpload('itemsFile', 'items', 'itemsInfo');
+    setupFileUpload('paymentsFile', 'payments', 'paymentsInfo');
+    setupFileUpload('productsFile', 'products', 'productsInfo');
+    setupFileUpload('customersFile', 'customers', 'customersInfo');
 
     function checkReady() {
-      const ready = Object.values(files).every(Boolean);
-      const btn = document.getElementById("launchBtn");
-      const status = document.getElementById("launchStatus");
-      if (ready) {
+      const allReady = Object.values(uploadedData).every(v => v !== null);
+      const btn = document.getElementById('buildBtn');
+      const statusText = document.getElementById('statusText');
+
+      if (allReady) {
         btn.disabled = false;
-        status.innerHTML = `All datasets loaded <span class="lime">· ready to launch</span>`;
-        btn.onclick = launchDashboard;
+        btn.className = "px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-700 transition";
+        btn.onclick = buildDashboard;
+        statusText.textContent = "All files uploaded. Ready to build dashboard.";
       } else {
-        const remaining = Object.entries(files).filter(([,v]) => !v).map(([k]) => k).join(", ");
-        status.textContent = `Missing: ${remaining}`;
+        const missing = [];
+        if (!uploadedData.orders) missing.push('orders');
+        if (!uploadedData.items) missing.push('order items');
+        if (!uploadedData.payments) missing.push('payments');
+        if (!uploadedData.products) missing.push('products');
+        if (!uploadedData.customers) missing.push('customers');
+        statusText.textContent = "Waiting for: " + missing.join(', ');
       }
     }
 
-    function toNumber(v) {
-      if (v === null || v === undefined || v === "") return 0;
-      const n = parseFloat(String(v).replace(/[^0-9.-]/g, ""));
-      return Number.isFinite(n) ? n : 0;
+    function safeDate(value) {
+      const d = new Date(value);
+      return isNaN(d) ? null : d;
     }
 
-    function safeDate(v) {
-      const d = new Date(v);
-      return isNaN(d.getTime()) ? null : d;
-    }
+    function buildDashboard() {
+      const orders = uploadedData.orders;
+      const items = uploadedData.items;
+      const payments = uploadedData.payments;
+      const products = uploadedData.products;
+      const customers = uploadedData.customers;
 
-    function weekKey(date) {
-      const d = new Date(date);
-      const first = new Date(d.getFullYear(), 0, 1);
-      const days = Math.floor((d - first) / 86400000);
-      const week = Math.ceil((days + first.getDay() + 1) / 7);
-      return `${d.getFullYear()}-W${String(week).padStart(2, "0")}`;
-    }
-
-    function monthKey(date) {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    }
-
-    function regionFromState(state) {
-      const s = (state || "").toUpperCase();
-      const map = {
-        North: ["AC","AP","AM","PA","RO","RR","TO"],
-        Northeast: ["AL","BA","CE","MA","PB","PE","PI","RN","SE"],
-        Midwest: ["DF","GO","MT","MS"],
-        Southeast: ["ES","MG","RJ","SP"],
-        South: ["PR","RS","SC"]
-      };
-      for (const [region, states] of Object.entries(map)) {
-        if (states.includes(s)) return region;
-      }
-      return s || "Unknown";
-    }
-
-    function launchDashboard() {
-      joinDataInMemory();
-      document.getElementById("uploadScreen").classList.add("hidden-screen");
-      document.getElementById("dashboard").classList.add("active");
-      bindControls();
-      renderAll();
-    }
-
-    function joinDataInMemory() {
-      const productsMap = new Map();
-      for (const p of files.products) {
-        productsMap.set(String(p.product_id).trim(), {
-          category: p.product_category_name || "Unknown"
-        });
-      }
-
-      const customersMap = new Map();
-      for (const c of files.customers) {
-        customersMap.set(String(c.customer_id).trim(), {
-          state: c.customer_state || "Unknown",
-          city: c.customer_city || "Unknown",
-          region: regionFromState(c.customer_state)
-        });
-      }
-
-      const itemsByOrder = new Map();
-      for (const row of files.items) {
-        const orderId = String(row.order_id).trim();
-        if (!itemsByOrder.has(orderId)) itemsByOrder.set(orderId, []);
-        const productId = String(row.product_id).trim();
-        const product = productsMap.get(productId) || { category: "Unknown" };
-        itemsByOrder.get(orderId).push({
-          product_id: productId,
-          category: product.category,
-          price: toNumber(row.price),
-          freight: toNumber(row.freight_value ?? row.shipping_charges ?? row.shipping ?? 0)
-        });
-      }
-
-      const paymentsByOrder = new Map();
-      for (const row of files.payments) {
-        const orderId = String(row.order_id).trim();
-        if (!paymentsByOrder.has(orderId)) {
-          paymentsByOrder.set(orderId, { total: 0, methods: {} });
-        }
-        const bucket = paymentsByOrder.get(orderId);
-        const method = row.payment_type || "unknown";
-        const value = toNumber(row.payment_value);
-        bucket.total += value;
-        bucket.methods[method] = (bucket.methods[method] || 0) + value;
-      }
-
-      masterRows = files.orders.map(order => {
-        const orderId = String(order.order_id).trim();
-        const orderItems = itemsByOrder.get(orderId) || [];
-        const payment = paymentsByOrder.get(orderId) || { total: 0, methods: {} };
-        const customer = customersMap.get(String(order.customer_id).trim()) || {
-          state: "Unknown",
-          city: "Unknown",
-          region: "Unknown"
+      const productMap = {};
+      products.forEach(p => {
+        productMap[p.product_id] = {
+          category: p.product_category_name || 'Unknown'
         };
+      });
 
-        const purchaseDate = safeDate(order.order_purchase_timestamp);
-        const deliveredDate = safeDate(order.order_delivered_timestamp);
-        const estimatedDate = safeDate(order.order_estimated_delivery_date);
-        const revenueFromItems = orderItems.reduce((sum, item) => sum + item.price + item.freight, 0);
-        const finalRevenue = payment.total > 0 ? payment.total : revenueFromItems;
-        const late = deliveredDate && estimatedDate ? deliveredDate > estimatedDate : false;
+      const customerMap = {};
+      customers.forEach(c => {
+        customerMap[c.customer_id] = {
+          city: c.customer_city || 'Unknown',
+          state: c.customer_state || 'Unknown'
+        };
+      });
+
+      const itemsByOrder = {};
+      items.forEach(i => {
+        const orderId = i.order_id;
+        if (!itemsByOrder[orderId]) itemsByOrder[orderId] = [];
+        itemsByOrder[orderId].push({
+          product_id: i.product_id,
+          price: parseFloat(i.price) || 0,
+          shipping: parseFloat(i.shipping_charges) || 0,
+          category: productMap[i.product_id]?.category || 'Unknown'
+        });
+      });
+
+      const paymentsByOrder = {};
+      payments.forEach(p => {
+        const orderId = p.order_id;
+        if (!paymentsByOrder[orderId]) {
+          paymentsByOrder[orderId] = {
+            totalPayment: 0,
+            paymentTypes: {}
+          };
+        }
+        const val = parseFloat(p.payment_value) || 0;
+        paymentsByOrder[orderId].totalPayment += val;
+        const pt = p.payment_type || 'unknown';
+        paymentsByOrder[orderId].paymentTypes[pt] = (paymentsByOrder[orderId].paymentTypes[pt] || 0) + val;
+      });
+
+      masterRows = orders.map(o => {
+        const orderItems = itemsByOrder[o.order_id] || [];
+        const paymentInfo = paymentsByOrder[o.order_id] || { totalPayment: 0, paymentTypes: {} };
+        const cust = customerMap[o.customer_id] || { city: 'Unknown', state: 'Unknown' };
+
+        const itemRevenue = orderItems.reduce((sum, r) => sum + r.price + r.shipping, 0);
+
+        const delivered = safeDate(o.order_delivered_timestamp);
+        const estimated = safeDate(o.order_estimated_delivery_date);
+        const purchaseDate = safeDate(o.order_purchase_timestamp);
+
+        const isLate = delivered && estimated ? delivered > estimated : false;
 
         return {
-          order_id: orderId,
-          customer_id: String(order.customer_id || "").trim(),
-          order_status: order.order_status || "unknown",
+          order_id: o.order_id,
+          customer_id: o.customer_id,
+          order_status: o.order_status || 'unknown',
           purchaseDate,
-          deliveredDate,
-          estimatedDate,
-          late,
-          revenue: finalRevenue,
+          delivered,
+          estimated,
+          isLate,
+          revenue: paymentInfo.totalPayment > 0 ? paymentInfo.totalPayment : itemRevenue,
+          city: cust.city,
+          state: cust.state,
           items: orderItems,
-          paymentMethods: payment.methods,
-          state: customer.state,
-          city: customer.city,
-          region: customer.region
+          paymentTypes: paymentInfo.paymentTypes
         };
       }).filter(r => r.purchaseDate);
+
+      initFilters();
+
+      document.getElementById('uploadSection').classList.add('hidden');
+      document.getElementById('controlSection').classList.remove('hidden');
+      document.getElementById('kpiSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('insightSection').classList.remove('hidden');
+
+      updateDashboard();
     }
 
-    function bindControls() {
-      document.getElementById("metricSelect").addEventListener("change", renderAll);
-      document.getElementById("granularitySelect").addEventListener("change", renderAll);
+    function initFilters() {
+      const states = [...new Set(masterRows.map(r => r.state).filter(Boolean))].sort();
+      const statuses = [...new Set(masterRows.map(r => r.order_status).filter(Boolean))].sort();
+
+      const stateFilter = document.getElementById('stateFilter');
+      const statusFilter = document.getElementById('statusFilter');
+
+      stateFilter.innerHTML = `<option value="ALL">All States</option>`;
+      statusFilter.innerHTML = `<option value="ALL">All Statuses</option>`;
+
+      states.forEach(s => {
+        stateFilter.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+
+      statuses.forEach(s => {
+        statusFilter.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+
+      ['stateFilter', 'statusFilter', 'metricFilter'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateDashboard);
+      });
     }
 
-    function renderAll() {
-      renderKPIs();
-      renderTrend();
-      renderPaymentChart();
-      renderCategoryTable();
-      renderStatusChart();
-      renderGeoChart();
-      renderHeatmap();
-      renderCategoryRevenueChart();
+    function getFilteredRows() {
+      const state = document.getElementById('stateFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
+      return masterRows.filter(r => {
+        const stateOk = state === 'ALL' || r.state === state;
+        const statusOk = status === 'ALL' || r.order_status === status;
+        return stateOk && statusOk;
+      });
     }
 
-    function renderKPIs() {
-      const totalRevenue = masterRows.reduce((sum, r) => sum + r.revenue, 0);
-      const totalOrders = masterRows.length;
-      const uniqueCustomers = new Set(masterRows.map(r => r.customer_id)).size;
+    function updateDashboard() {
+      const rows = getFilteredRows();
+      const metric = document.getElementById('metricFilter').value;
+
+      const totalOrders = rows.length;
+      const totalRevenue = rows.reduce((sum, r) => sum + r.revenue, 0);
       const avgOrderValue = totalOrders ? totalRevenue / totalOrders : 0;
-      const lateDeliveries = masterRows.filter(r => r.late).length;
-      const deliveredWithEstimate = masterRows.filter(r => r.deliveredDate && r.estimatedDate).length;
-      const onTimeRate = deliveredWithEstimate
-        ? ((deliveredWithEstimate - lateDeliveries) / deliveredWithEstimate) * 100
-        : 0;
+      const lateRate = totalOrders ? (rows.filter(r => r.isLate).length / totalOrders) * 100 : 0;
 
-      document.getElementById("kpiRevenue").textContent = formatMoney(totalRevenue);
-      document.getElementById("kpiOrders").textContent = totalOrders.toLocaleString();
-      document.getElementById("kpiCustomers").textContent = uniqueCustomers.toLocaleString();
-      document.getElementById("kpiAOV").textContent = formatMoney(avgOrderValue);
-      document.getElementById("kpiLate").textContent = lateDeliveries.toLocaleString();
-      document.getElementById("kpiOnTime").textContent = `${onTimeRate.toFixed(1)}%`;
+      document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
+      document.getElementById('kpiRevenue').textContent = '$' + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      document.getElementById('kpiAOV').textContent = '$' + avgOrderValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      document.getElementById('kpiLateRate').textContent = lateRate.toFixed(1) + '%';
+
+      updateInsightText(rows);
+      renderMonthlyTrend(rows, metric);
+      renderCategoryChart(rows, metric);
+      renderPaymentChart(rows);
+      renderStateChart(rows, metric);
     }
 
-    function renderTrend() {
-      const metric = document.getElementById("metricSelect").value;
-      const granularity = document.getElementById("granularitySelect").value;
+    function updateInsightText(rows) {
+      if (!rows.length) {
+        document.getElementById('insightText').textContent = "No records match the selected filters.";
+        return;
+      }
+
+      const stateRevenue = {};
+      rows.forEach(r => {
+        stateRevenue[r.state] = (stateRevenue[r.state] || 0) + r.revenue;
+      });
+
+      const topState = Object.entries(stateRevenue).sort((a,b) => b[1] - a[1])[0];
+
+      const lateCount = rows.filter(r => r.isLate).length;
+      const lateRate = rows.length ? (lateCount / rows.length) * 100 : 0;
+
+      document.getElementById('insightText').textContent =
+        `This filtered view contains ${rows.length.toLocaleString()} orders. The leading state is ${topState ? topState[0] : 'N/A'}, and the late delivery rate is ${lateRate.toFixed(1)}%.`;
+    }
+
+    function renderMonthlyTrend(rows, metric) {
       const grouped = {};
 
-      for (const row of masterRows) {
-        const key = granularity === "weekly" ? weekKey(row.purchaseDate) : monthKey(row.purchaseDate);
+      rows.forEach(r => {
+        const d = r.purchaseDate;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         if (!grouped[key]) grouped[key] = 0;
-
-        if (metric === "revenue") grouped[key] += row.revenue;
-        if (metric === "orders") grouped[key] += 1;
-        if (metric === "late") grouped[key] += row.late ? 1 : 0;
-      }
+        grouped[key] += metric === 'orders' ? 1 : r.revenue;
+      });
 
       const labels = Object.keys(grouped).sort();
-      const values = labels.map(k => grouped[k]);
-      document.getElementById("trendMeta").textContent =
-        `${metric === "revenue" ? "Revenue" : metric === "orders" ? "Orders" : "Late Deliveries"} · ${granularity === "weekly" ? "Weekly" : "Monthly"}`;
+      const data = labels.map(l => grouped[l]);
 
       if (charts.trend) charts.trend.destroy();
-      const ctx = document.getElementById("trendChart").getContext("2d");
-      const gradient = ctx.createLinearGradient(0, 0, 0, 360);
-      gradient.addColorStop(0, metric === "late" ? "rgba(255,107,107,0.45)" : "rgba(200,255,87,0.38)");
-      gradient.addColorStop(1, "rgba(10,10,15,0)");
-
-      charts.trend = new Chart(ctx, {
-        type: "line",
+      charts.trend = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
         data: {
           labels,
           datasets: [{
-            label: metric,
-            data: values,
-            borderColor: metric === "late" ? color.red : color.lime,
-            backgroundColor: gradient,
+            label: metric === 'orders' ? 'Orders' : 'Revenue',
+            data,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.15)',
             fill: true,
-            pointRadius: 2.5,
-            pointHoverRadius: 4,
-            pointBackgroundColor: metric === "late" ? color.red : color.lime,
-            borderWidth: 2,
-            tension: 0.28
+            tension: 0.35,
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: '#4f46e5'
           }]
         },
         options: {
+          responsive: true,
           maintainAspectRatio: false,
-          interaction: { mode: "index", intersect: false },
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { maxRotation: 0, autoSkip: true } },
-            y: { grid: { color: "rgba(255,255,255,0.05)" } }
-          }
+          plugins: { legend: { display: false } }
         }
       });
     }
 
-    function renderPaymentChart() {
-      const totals = {};
-      for (const row of masterRows) {
-        for (const [method, value] of Object.entries(row.paymentMethods)) {
-          totals[method] = (totals[method] || 0) + value;
-        }
-      }
+    function renderCategoryChart(rows, metric) {
+      const grouped = {};
 
-      const labels = Object.keys(totals);
-      const values = labels.map(k => totals[k]);
-      const palette = [color.lime, color.purple, color.red, "#5edfff", "#ffd166", "#95f9c3"];
+      rows.forEach(r => {
+        const seen = [];
+        r.items.forEach(item => {
+          const cat = item.category || 'Unknown';
+          if (!grouped[cat]) grouped[cat] = 0;
+
+          if (metric === 'orders') {
+            if (!seen.includes(cat)) {
+              grouped[cat] += 1;
+              seen.push(cat);
+            }
+          } else {
+            grouped[cat] += (item.price + item.shipping);
+          }
+        });
+      });
+
+      const top = Object.entries(grouped).sort((a,b) => b[1] - a[1]).slice(0, 10);
+
+      if (charts.category) charts.category.destroy();
+      charts.category = new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: {
+          labels: top.map(x => x[0]),
+          datasets: [{
+            data: top.map(x => x[1]),
+            backgroundColor: [
+              '#4f46e5','#7c3aed','#2563eb','#0891b2','#059669',
+              '#65a30d','#d97706','#ea580c','#dc2626','#db2777'
+            ],
+            borderRadius: 10
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderPaymentChart(rows) {
+      const grouped = {};
+
+      rows.forEach(r => {
+        Object.entries(r.paymentTypes).forEach(([type, value]) => {
+          grouped[type] = (grouped[type] || 0) + value;
+        });
+      });
+
+      const labels = Object.keys(grouped);
+      const data = labels.map(l => grouped[l]);
 
       if (charts.payment) charts.payment.destroy();
-      charts.payment = new Chart(document.getElementById("paymentChart"), {
-        type: "doughnut",
-        data: {
-          labels,
-          datasets: [{ data: values, backgroundColor: palette, borderColor: color.bg, borderWidth: 2 }]
-        },
-        options: {
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "bottom", labels: { color: color.text, boxWidth: 14 } }
-          }
-        }
-      });
-    }
-
-    function renderCategoryTable() {
-      const totals = {};
-      for (const row of masterRows) {
-        for (const item of row.items) {
-          totals[item.category] = (totals[item.category] || 0) + item.price + item.freight;
-        }
-      }
-      const ranked = Object.entries(totals).sort((a,b) => b[1] - a[1]).slice(0, 10);
-      const max = ranked.length ? ranked[0][1] : 1;
-      const container = document.getElementById("categoryTable");
-      container.innerHTML = "";
-
-      ranked.forEach(([name, value], i) => {
-        const percent = max ? (value / max) * 100 : 0;
-        const row = document.createElement("div");
-        row.className = "rank-row";
-        row.innerHTML = `
-          <div class="muted">#${i + 1}</div>
-          <div>
-            <div class="rank-name">${escapeHtml(name)}</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${percent}%"></div></div>
-          </div>
-          <div style="text-align:right;" class="lime">${formatMoney(value)}</div>
-        `;
-        container.appendChild(row);
-      });
-
-      if (!ranked.length) {
-        container.innerHTML = `<div class="muted">No category data available.</div>`;
-      }
-    }
-
-    function renderStatusChart() {
-      const totals = {};
-      for (const row of masterRows) {
-        totals[row.order_status] = (totals[row.order_status] || 0) + 1;
-      }
-
-      const labels = Object.keys(totals);
-      const values = labels.map(k => totals[k]);
-      const palette = [color.lime, color.purple, color.red, "#5edfff", "#ffd166", "#c084fc", "#7dd3fc"];
-
-      if (charts.status) charts.status.destroy();
-      charts.status = new Chart(document.getElementById("statusChart"), {
-        type: "pie",
-        data: {
-          labels,
-          datasets: [{ data: values, backgroundColor: palette, borderColor: color.bg, borderWidth: 2 }]
-        },
-        options: {
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "bottom", labels: { color: color.text, boxWidth: 14 } }
-          }
-        }
-      });
-
-      const pills = document.getElementById("statusPills");
-      pills.innerHTML = "";
-      labels.forEach((label, idx) => {
-        const pill = document.createElement("div");
-        pill.className = "pill";
-        pill.style.borderColor = palette[idx % palette.length];
-        pill.innerHTML = `<span style="color:${palette[idx % palette.length]};">${escapeHtml(label)}</span> · ${values[idx].toLocaleString()}`;
-        pills.appendChild(pill);
-      });
-    }
-
-    function renderGeoChart() {
-      const totals = {};
-      for (const row of masterRows) {
-        totals[row.region] = (totals[row.region] || 0) + row.revenue;
-      }
-
-      const ranked = Object.entries(totals).sort((a,b) => b[1] - a[1]);
-      const labels = ranked.map(x => x[0]);
-      const values = ranked.map(x => x[1]);
-
-      if (charts.geo) charts.geo.destroy();
-      charts.geo = new Chart(document.getElementById("geoChart"), {
-        type: "bar",
+      charts.payment = new Chart(document.getElementById('paymentChart'), {
+        type: 'doughnut',
         data: {
           labels,
           datasets: [{
-            data: values,
-            backgroundColor: color.purple,
-            borderWidth: 0
+            data,
+            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
           }]
         },
         options: {
-          indexAxis: "y",
+          responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { color: "rgba(255,255,255,0.05)" } },
-            y: { grid: { display: false } }
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
           }
         }
       });
     }
 
-    function renderHeatmap() {
-      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-      const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
-      let max = 0;
+    function renderStateChart(rows, metric) {
+      const grouped = {};
 
-      for (const row of masterRows) {
-        const d = row.purchaseDate;
-        const day = d.getDay();
-        const hour = d.getHours();
-        matrix[day][hour] += 1;
-        max = Math.max(max, matrix[day][hour]);
-      }
+      rows.forEach(r => {
+        if (!grouped[r.state]) grouped[r.state] = 0;
+        grouped[r.state] += metric === 'orders' ? 1 : r.revenue;
+      });
 
-      const heatmap = document.getElementById("heatmap");
-      heatmap.innerHTML = "";
+      const top = Object.entries(grouped).sort((a,b) => b[1] - a[1]).slice(0, 10);
 
-      heatmap.appendChild(cell("","hm-head"));
-      for (let h = 0; h < 24; h++) heatmap.appendChild(cell(String(h).padStart(2, "0"), "hm-head"));
-
-      for (let d = 0; d < 7; d++) {
-        heatmap.appendChild(cell(days[d], "hm-side"));
-        for (let h = 0; h < 24; h++) {
-          const value = matrix[d][h];
-          const alpha = max ? value / max : 0;
-          const div = document.createElement("div");
-          div.className = "hm-cell" + (alpha > 0.55 ? " hm-intense" : "");
-          div.title = `${days[d]} ${String(h).padStart(2, "0")}:00 · ${value} orders`;
-          div.textContent = value ? value : "";
-          div.style.background = alpha === 0
-            ? "#0d0f16"
-            : `rgba(200,255,87,${0.08 + alpha * 0.92})`;
-          heatmap.appendChild(div);
-        }
-      }
-    }
-
-    function renderCategoryRevenueChart() {
-      const totals = {};
-      for (const row of masterRows) {
-        for (const item of row.items) {
-          totals[item.category] = (totals[item.category] || 0) + item.price + item.freight;
-        }
-      }
-      const ranked = Object.entries(totals).sort((a,b) => b[1] - a[1]).slice(0, 8);
-      const labels = ranked.map(x => x[0]);
-      const values = ranked.map(x => x[1]);
-
-      if (charts.categoryRevenue) charts.categoryRevenue.destroy();
-      charts.categoryRevenue = new Chart(document.getElementById("categoryRevenueChart"), {
-        type: "bar",
+      if (charts.state) charts.state.destroy();
+      charts.state = new Chart(document.getElementById('stateChart'), {
+        type: 'bar',
         data: {
-          labels,
+          labels: top.map(x => x[0]),
           datasets: [{
-            data: values,
-            backgroundColor: color.lime
+            data: top.map(x => x[1]),
+            backgroundColor: '#0ea5e9',
+            borderRadius: 10
           }]
         },
         options: {
+          responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { maxRotation: 35, minRotation: 35 } },
-            y: { grid: { color: "rgba(255,255,255,0.05)" } }
-          }
+          plugins: { legend: { display: false } }
         }
       });
     }
 
-    function cell(text, cls) {
-      const el = document.createElement("div");
-      el.className = cls;
-      el.textContent = text;
-      return el;
-    }
-
-    function formatMoney(n) {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0
-      }).format(n || 0);
-    }
-
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
-
-    function resetDashboard() {
+    function resetApp() {
       location.reload();
     }
   </script>
