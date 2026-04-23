@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Commerce Analytics Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <style>
+    .chart-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 1.25rem;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+    .chart-wrap {
+      position: relative;
+      height: 360px;
+      width: 100%;
+    }
+    .upload-card {
+      background: white;
+      border: 2px dashed #cbd5e1;
+      border-radius: 1.25rem;
+      padding: 1.25rem;
+      transition: 0.2s ease;
+    }
+    .upload-card:hover {
+      border-color: #4f46e5;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="bg-indigo-600 text-white p-2 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 3v18h18M7 14l3-3 3 2 4-6"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold">E-Commerce Analytics Dashboard</h1>
+            <p class="text-sm text-slate-500">Interactive HTML dashboard for your uploaded CSV datasets</p>
+          </div>
+        </div>
+        <button onclick="resetApp()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-semibold">
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <!-- Upload Section -->
+      <section id="uploadSection" class="space-y-6">
+        <div>
+          <h2 class="text-2xl font-black">Upload the 5 CSV files</h2>
+          <p class="text-slate-500 mt-1">The dashboard will join the datasets using order_id, product_id, and customer_id.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div class="upload-card text-center">
+            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Orders</p>
+            <button onclick="document.getElementById('ordersFile').click()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-semibold hover:bg-indigo-100">Upload</button>
+            <input id="ordersFile" type="file" accept=".csv" class="hidden">
+            <p id="ordersInfo" class="mt-3 text-xs text-slate-500">No file</p>
+          </div>
+
+          <div class="upload-card text-center">
+            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Order Items</p>
+            <button onclick="document.getElementById('itemsFile').click()" class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl font-semibold hover:bg-emerald-100">Upload</button>
+            <input id="itemsFile" type="file" accept=".csv" class="hidden">
+            <p id="itemsInfo" class="mt-3 text-xs text-slate-500">No file</p>
+          </div>
+
+          <div class="upload-card text-center">
+            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Payments</p>
+            <button onclick="document.getElementById('paymentsFile').click()" class="bg-amber-50 text-amber-700 px-4 py-2 rounded-xl font-semibold hover:bg-amber-100">Upload</button>
+            <input id="paymentsFile" type="file" accept=".csv" class="hidden">
+            <p id="paymentsInfo" class="mt-3 text-xs text-slate-500">No file</p>
+          </div>
+
+          <div class="upload-card text-center">
+            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Products</p>
+            <button onclick="document.getElementById('productsFile').click()" class="bg-pink-50 text-pink-700 px-4 py-2 rounded-xl font-semibold hover:bg-pink-100">Upload</button>
+            <input id="productsFile" type="file" accept=".csv" class="hidden">
+            <p id="productsInfo" class="mt-3 text-xs text-slate-500">No file</p>
+          </div>
+
+          <div class="upload-card text-center">
+            <p class="text-xs uppercase font-bold text-slate-400 mb-3">Customers</p>
+            <button onclick="document.getElementById('customersFile').click()" class="bg-cyan-50 text-cyan-700 px-4 py-2 rounded-xl font-semibold hover:bg-cyan-100">Upload</button>
+            <input id="customersFile" type="file" accept=".csv" class="hidden">
+            <p id="customersInfo" class="mt-3 text-xs text-slate-500">No file</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <button id="buildBtn" disabled class="px-6 py-3 rounded-2xl bg-slate-200 text-slate-400 font-bold cursor-not-allowed">
+            Build Dashboard
+          </button>
+          <span id="statusText" class="text-sm text-slate-500">Waiting for all 5 files...</span>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section id="controlSection" class="hidden chart-card">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">State Filter</label>
+            <select id="stateFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
+              <option value="ALL">All States</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Order Status</label>
+            <select id="statusFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
+              <option value="ALL">All Statuses</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Chart Metric</label>
+            <select id="metricFilter" class="w-full border border-slate-200 rounded-xl px-3 py-3 bg-slate-50">
+              <option value="revenue">Revenue</option>
+              <option value="orders">Orders</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI Cards -->
+      <section id="kpiSection" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="chart-card">
+          <p class="text-xs uppercase font-bold text-slate-400">Total Orders</p>
+          <h3 id="kpiOrders" class="text-3xl font-black mt-2">0</h3>
+        </div>
+        <div class="chart-card">
+          <p class="text-xs uppercase font-bold text-slate-400">Total Revenue</p>
+          <h3 id="kpiRevenue" class="text-3xl font-black mt-2">$0</h3>
+        </div>
+        <div class="chart-card">
+          <p class="text-xs uppercase font-bold text-slate-400">Avg Order Value</p>
+          <h3 id="kpiAOV" class="text-3xl font-black mt-2">$0</h3>
+        </div>
+        <div class="chart-card bg-indigo-600 border-indigo-600">
+          <p class="text-xs uppercase font-bold text-indigo-200">Late Delivery Rate</p>
+          <h3 id="kpiLateRate" class="text-3xl font-black mt-2 text-white">0%</h3>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section id="dashboardSection" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="chart-card">
+          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Monthly Trend</h3>
+          <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Top Product Categories</h3>
+          <div class="chart-wrap">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Payment Type Distribution</h3>
+          <div class="chart-wrap">
+            <canvas id="paymentChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 class="font-black text-sm uppercase tracking-wider mb-4">Top States by Revenue</h3>
+          <div class="chart-wrap">
+            <canvas id="stateChart"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const uploadedData = {
+      orders: null,
+      items: null,
+      payments: null,
+      products: null,
+      customers: null
+    };
+
+    let masterRows = [];
+    let charts = {
+      trend: null,
+      category: null,
+      payment: null,
+      state: null
+    };
+
+    function parseCSV(file, callback) {
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          callback(results.data);
+        }
+      });
+    }
+
+    function setupFileUpload(inputId, key, infoId) {
+      document.getElementById(inputId).addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        document.getElementById(infoId).textContent = 'Loading...';
+
+        parseCSV(file, function(data) {
+          uploadedData[key] = data;
+          document.getElementById(infoId).textContent = `${file.name} · ${data.length.toLocaleString()} rows`;
+          checkReady();
+        });
+      });
+    }
+
+    setupFileUpload('ordersFile', 'orders', 'ordersInfo');
+    setupFileUpload('itemsFile', 'items', 'itemsInfo');
+    setupFileUpload('paymentsFile', 'payments', 'paymentsInfo');
+    setupFileUpload('productsFile', 'products', 'productsInfo');
+    setupFileUpload('customersFile', 'customers', 'customersInfo');
+
+    function checkReady() {
+      const allReady = Object.values(uploadedData).every(v => v !== null);
+      const btn = document.getElementById('buildBtn');
+      const statusText = document.getElementById('statusText');
+
+      if (allReady) {
+        btn.disabled = false;
+        btn.className = "px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700";
+        btn.onclick = buildDashboard;
+        statusText.textContent = "All files uploaded. Ready to build dashboard.";
+      } else {
+        const missing = [];
+        if (!uploadedData.orders) missing.push('orders');
+        if (!uploadedData.items) missing.push('order items');
+        if (!uploadedData.payments) missing.push('payments');
+        if (!uploadedData.products) missing.push('products');
+        if (!uploadedData.customers) missing.push('customers');
+        statusText.textContent = "Waiting for: " + missing.join(', ');
+      }
+    }
+
+    function safeDate(value) {
+      const d = new Date(value);
+      return isNaN(d) ? null : d;
+    }
+
+    function buildDashboard() {
+      const orders = uploadedData.orders;
+      const items = uploadedData.items;
+      const payments = uploadedData.payments;
+      const products = uploadedData.products;
+      const customers = uploadedData.customers;
+
+      const productMap = {};
+      products.forEach(p => {
+        productMap[p.product_id] = {
+          category: p.product_category_name || 'Unknown',
+          weight: parseFloat(p.product_weight_g) || 0
+        };
+      });
+
+      const customerMap = {};
+      customers.forEach(c => {
+        customerMap[c.customer_id] = {
+          city: c.customer_city || 'Unknown',
+          state: c.customer_state || 'Unknown'
+        };
+      });
+
+      const itemsByOrder = {};
+      items.forEach(i => {
+        const orderId = i.order_id;
+        if (!itemsByOrder[orderId]) itemsByOrder[orderId] = [];
+        itemsByOrder[orderId].push({
+          product_id: i.product_id,
+          price: parseFloat(i.price) || 0,
+          shipping: parseFloat(i.shipping_charges) || 0,
+          category: productMap[i.product_id]?.category || 'Unknown'
+        });
+      });
+
+      const paymentsByOrder = {};
+      payments.forEach(p => {
+        const orderId = p.order_id;
+        if (!paymentsByOrder[orderId]) {
+          paymentsByOrder[orderId] = {
+            totalPayment: 0,
+            paymentTypes: {}
+          };
+        }
+        const val = parseFloat(p.payment_value) || 0;
+        paymentsByOrder[orderId].totalPayment += val;
+
+        const pt = p.payment_type || 'unknown';
+        paymentsByOrder[orderId].paymentTypes[pt] = (paymentsByOrder[orderId].paymentTypes[pt] || 0) + val;
+      });
+
+      masterRows = orders.map(o => {
+        const orderItems = itemsByOrder[o.order_id] || [];
+        const paymentInfo = paymentsByOrder[o.order_id] || { totalPayment: 0, paymentTypes: {} };
+        const cust = customerMap[o.customer_id] || { city: 'Unknown', state: 'Unknown' };
+
+        const itemRevenue = orderItems.reduce((sum, r) => sum + r.price + r.shipping, 0);
+
+        const delivered = safeDate(o.order_delivered_timestamp);
+        const estimated = safeDate(o.order_estimated_delivery_date);
+        const purchaseDate = safeDate(o.order_purchase_timestamp);
+
+        const isLate = delivered && estimated ? delivered > estimated : false;
+
+        return {
+          order_id: o.order_id,
+          customer_id: o.customer_id,
+          order_status: o.order_status || 'unknown',
+          purchaseDate,
+          delivered,
+          estimated,
+          isLate,
+          revenue: paymentInfo.totalPayment > 0 ? paymentInfo.totalPayment : itemRevenue,
+          city: cust.city,
+          state: cust.state,
+          items: orderItems,
+          paymentTypes: paymentInfo.paymentTypes
+        };
+      }).filter(r => r.purchaseDate);
+
+      initFilters();
+      document.getElementById('uploadSection').classList.add('hidden');
+      document.getElementById('controlSection').classList.remove('hidden');
+      document.getElementById('kpiSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+
+      updateDashboard();
+    }
+
+    function initFilters() {
+      const states = [...new Set(masterRows.map(r => r.state).filter(Boolean))].sort();
+      const statuses = [...new Set(masterRows.map(r => r.order_status).filter(Boolean))].sort();
+
+      const stateFilter = document.getElementById('stateFilter');
+      const statusFilter = document.getElementById('statusFilter');
+
+      stateFilter.innerHTML = `<option value="ALL">All States</option>`;
+      statusFilter.innerHTML = `<option value="ALL">All Statuses</option>`;
+
+      states.forEach(s => {
+        stateFilter.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+
+      statuses.forEach(s => {
+        statusFilter.innerHTML += `<option value="${s}">${s}</option>`;
+      });
+
+      ['stateFilter', 'statusFilter', 'metricFilter'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateDashboard);
+      });
+    }
+
+    function getFilteredRows() {
+      const state = document.getElementById('stateFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
+      return masterRows.filter(r => {
+        const stateOk = state === 'ALL' || r.state === state;
+        const statusOk = status === 'ALL' || r.order_status === status;
+        return stateOk && statusOk;
+      });
+    }
+
+    function updateDashboard() {
+      const rows = getFilteredRows();
+      const metric = document.getElementById('metricFilter').value;
+
+      // KPIs
+      const totalOrders = rows.length;
+      const totalRevenue = rows.reduce((sum, r) => sum + r.revenue, 0);
+      const avgOrderValue = totalOrders ? totalRevenue / totalOrders : 0;
+      const lateRate = totalOrders ? (rows.filter(r => r.isLate).length / totalOrders) * 100 : 0;
+
+      document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
+      document.getElementById('kpiRevenue').textContent = '$' + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      document.getElementById('kpiAOV').textContent = '$' + avgOrderValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      document.getElementById('kpiLateRate').textContent = lateRate.toFixed(1) + '%';
+
+      renderMonthlyTrend(rows, metric);
+      renderCategoryChart(rows, metric);
+      renderPaymentChart(rows);
+      renderStateChart(rows, metric);
+    }
+
+    function renderMonthlyTrend(rows, metric) {
+      const grouped = {};
+
+      rows.forEach(r => {
+        const d = r.purchaseDate;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!grouped[key]) grouped[key] = 0;
+        grouped[key] += metric === 'orders' ? 1 : r.revenue;
+      });
+
+      const labels = Object.keys(grouped).sort();
+      const data = labels.map(l => grouped[l]);
+
+      if (charts.trend) charts.trend.destroy();
+      charts.trend = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: metric === 'orders' ? 'Orders' : 'Revenue',
+            data,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.08)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderCategoryChart(rows, metric) {
+      const grouped = {};
+
+      rows.forEach(r => {
+        const seen = [];
+        r.items.forEach(item => {
+          const cat = item.category || 'Unknown';
+          if (!grouped[cat]) grouped[cat] = 0;
+
+          if (metric === 'orders') {
+            if (!seen.includes(cat)) {
+              grouped[cat] += 1;
+              seen.push(cat);
+            }
+          } else {
+            grouped[cat] += (item.price + item.shipping);
+          }
+        });
+      });
+
+      const top = Object.entries(grouped)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      if (charts.category) charts.category.destroy();
+      charts.category = new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: {
+          labels: top.map(x => x[0]),
+          datasets: [{
+            data: top.map(x => x[1]),
+            backgroundColor: '#10b981',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderPaymentChart(rows) {
+      const grouped = {};
+
+      rows.forEach(r => {
+        Object.entries(r.paymentTypes).forEach(([type, value]) => {
+          grouped[type] = (grouped[type] || 0) + value;
+        });
+      });
+
+      const labels = Object.keys(grouped);
+      const data = labels.map(l => grouped[l]);
+
+      if (charts.payment) charts.payment.destroy();
+      charts.payment = new Chart(document.getElementById('paymentChart'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    function renderStateChart(rows, metric) {
+      const grouped = {};
+
+      rows.forEach(r => {
+        if (!grouped[r.state]) grouped[r.state] = 0;
+        grouped[r.state] += metric === 'orders' ? 1 : r.revenue;
+      });
+
+      const top = Object.entries(grouped)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      if (charts.state) charts.state.destroy();
+      charts.state = new Chart(document.getElementById('stateChart'), {
+        type: 'bar',
+        data: {
+          labels: top.map(x => x[0]),
+          datasets: [{
+            data: top.map(x => x[1]),
+            backgroundColor: '#f59e0b',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function resetApp() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>
